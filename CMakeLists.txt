@@ -33,6 +33,7 @@ if(BUILD_TESTING)
     endfunction()
 
     add_cosmetics_test(framework_tests)
+    add_cosmetics_test(result_tests)
     add_executable(framework_failure_probe tests/framework_failure_probe.cpp)
     target_link_libraries(framework_failure_probe PRIVATE GTest::gtest_main)
     add_test(NAME framework_failure_exit

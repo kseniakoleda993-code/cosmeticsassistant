@@ -1,3 +1,5 @@
 /tmp/
 /build/
 /build-*/
+/.bot-token
+/.env

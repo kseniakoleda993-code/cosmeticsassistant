@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(cosmetics STATIC
     src/config/token.cpp
     src/transport/fake_transport.cpp
+    src/http/response.cpp
 )
 target_include_directories(cosmetics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -42,6 +43,7 @@ if(BUILD_TESTING)
     add_cosmetics_test(result_tests)
     add_cosmetics_test(token_tests)
     add_cosmetics_test(transport_tests)
+    add_cosmetics_test(http_tests)
     add_executable(framework_failure_probe tests/framework_failure_probe.cpp)
     target_link_libraries(framework_failure_probe PRIVATE GTest::gtest_main)
     add_test(NAME framework_failure_exit

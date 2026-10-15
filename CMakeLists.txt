@@ -13,6 +13,7 @@ add_library(cosmetics STATIC
     src/catalog/position.cpp
     src/catalog/category_positions.cpp
     src/catalog/budget.cpp
+    src/catalog/product.cpp
 )
 target_include_directories(cosmetics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -52,6 +53,7 @@ if(BUILD_TESTING)
     add_cosmetics_test(position_tests)
     add_cosmetics_test(category_positions_tests)
     add_cosmetics_test(budget_tests)
+    add_cosmetics_test(product_tests)
     add_executable(framework_failure_probe tests/framework_failure_probe.cpp)
     target_link_libraries(framework_failure_probe PRIVATE GTest::gtest_main)
     add_test(NAME framework_failure_exit

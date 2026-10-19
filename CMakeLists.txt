@@ -14,6 +14,7 @@ add_library(cosmetics STATIC
     src/catalog/category_positions.cpp
     src/catalog/budget.cpp
     src/catalog/product.cpp
+    src/json/value.cpp
 )
 target_include_directories(cosmetics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

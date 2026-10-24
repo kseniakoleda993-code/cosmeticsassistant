@@ -34,7 +34,7 @@ public:
 
     Ptr read() {
         skip_space();
-        Ptr result = read_value();
+        Ptr result = read_value(0);
         skip_space();
         if (pos != input.size()) {
             fail();
@@ -165,9 +165,80 @@ private:
         return std::make_unique<Number>(value);
     }
 
-    Ptr read_value() {
+    void expect(char ch) {
+        if (!take(ch)) {
+            fail();
+        }
+    }
+
+    void literal(std::string_view text) {
+        if (input.substr(pos, text.size()) != text) {
+            fail();
+        }
+        pos += text.size();
+    }
+
+    Ptr read_array(unsigned int depth) {
+        auto array = std::make_unique<Array>();
+        skip_space();
+        if (take(']')) {
+            return array;
+        }
+        do {
+            skip_space();
+            array->values.push_back(read_value(depth));
+            skip_space();
+        } while (take(','));
+        expect(']');
+        return array;
+    }
+
+    Ptr read_object(unsigned int depth) {
+        auto object = std::make_unique<Object>();
+        skip_space();
+        if (take('}')) {
+            return object;
+        }
+        do {
+            skip_space();
+            std::string key = read_string();
+            skip_space();
+            expect(':');
+            skip_space();
+            auto value = read_value(depth);
+            if (!object->fields.emplace(std::move(key), std::move(value)).second) {
+                fail();
+            }
+            skip_space();
+        } while (take(','));
+        expect('}');
+        return object;
+    }
+
+    Ptr read_value(unsigned int depth) {
+        if (depth > 128) {
+            fail();
+        }
+        if (take('[')) {
+            return read_array(depth + 1);
+        }
+        if (take('{')) {
+            return read_object(depth + 1);
+        }
         if (peek() == '"') {
             return std::make_unique<String>(read_string());
+        }
+        if (peek() == 't') {
+            literal("true");
+            return std::make_unique<Boolean>(true);
+        }
+        if (peek() == 'f') {
+            literal("false");
+            return std::make_unique<Boolean>(false);
+        }
+        if (peek() == 'n') {
+            literal("null");
+            return std::make_unique<Null>();
         }
         return read_number();
     }

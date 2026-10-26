@@ -56,6 +56,7 @@ if(BUILD_TESTING)
     add_cosmetics_test(category_positions_tests)
     add_cosmetics_test(budget_tests)
     add_cosmetics_test(product_tests)
+    add_cosmetics_test(json_tests)
     add_executable(framework_failure_probe tests/framework_failure_probe.cpp)
     target_link_libraries(framework_failure_probe PRIVATE GTest::gtest_main)
     add_test(NAME framework_failure_exit

@@ -5,9 +5,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(CURL 7.56 REQUIRED)
+
 add_library(cosmetics STATIC
     src/config/token.cpp
     src/transport/fake_transport.cpp
+    src/transport/https_transport.cpp
     src/http/response.cpp
     src/catalog/category.cpp
     src/catalog/position.cpp
@@ -17,10 +20,14 @@ add_library(cosmetics STATIC
     src/json/value.cpp
     src/json/parse.cpp
 )
+target_link_libraries(cosmetics PUBLIC CURL::libcurl)
 target_include_directories(cosmetics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(cosmetics PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+add_executable(telegram_smoke EXCLUDE_FROM_ALL tests/telegram_smoke.cpp)
+target_link_libraries(telegram_smoke PRIVATE cosmetics)
 
 include(CTest)
 if(BUILD_TESTING)

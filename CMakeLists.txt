@@ -19,6 +19,7 @@ add_library(cosmetics STATIC
     src/catalog/product.cpp
     src/json/value.cpp
     src/json/parse.cpp
+    src/telegram/update.cpp
 )
 target_link_libraries(cosmetics PUBLIC CURL::libcurl)
 target_include_directories(cosmetics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

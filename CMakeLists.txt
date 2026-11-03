@@ -21,6 +21,7 @@ add_library(cosmetics STATIC
     src/json/parse.cpp
     src/telegram/update.cpp
     src/telegram/request.cpp
+    src/telegram/client.cpp
 )
 target_link_libraries(cosmetics PUBLIC CURL::libcurl)
 target_include_directories(cosmetics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

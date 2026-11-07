@@ -17,6 +17,7 @@ add_library(cosmetics STATIC
     src/catalog/category_positions.cpp
     src/catalog/budget.cpp
     src/catalog/product.cpp
+    src/catalog/catalog.cpp
     src/json/value.cpp
     src/json/parse.cpp
     src/telegram/update.cpp
@@ -66,6 +67,7 @@ if(BUILD_TESTING)
     add_cosmetics_test(category_positions_tests)
     add_cosmetics_test(budget_tests)
     add_cosmetics_test(product_tests)
+    add_cosmetics_test(catalog_tests)
     add_cosmetics_test(json_tests)
     add_cosmetics_test(telegram_tests)
     add_executable(framework_failure_probe tests/framework_failure_probe.cpp)

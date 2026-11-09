@@ -21,3 +21,10 @@ TEST(Cart, CopiesKeepOrderAndSum) {
     auto overflow = Cart().add(Product("a", std::numeric_limits<std::int64_t>::max())).add(Product("b", 1));
     EXPECT_THROW(overflow.total(), std::overflow_error);
 }
+
+#include "cosmetics/dialog/summary.hpp"
+
+TEST(Cart, SummaryIncludesZeroAndTotal) {
+    EXPECT_EQ(cart_summary(Cart()), "Отлично! Суммарная стоимость продуктов:\n0.00 BYN\nБыл рад помочь! Если есть какие-либо вопросы, задавай");
+    EXPECT_NE(cart_summary(Cart().add(Product("a", 4950))).find("49.50 BYN"), std::string::npos);
+}

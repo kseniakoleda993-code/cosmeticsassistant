@@ -19,6 +19,7 @@ add_library(cosmetics STATIC
     src/catalog/product.cpp
     src/catalog/catalog.cpp
     src/catalog/cart.cpp
+    src/dialog/summary.cpp
     src/json/value.cpp
     src/json/parse.cpp
     src/telegram/update.cpp

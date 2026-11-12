@@ -1,6 +1,7 @@
 #include "cosmetics/json/field.hpp"
 #include "cosmetics/json/parse.hpp"
 #include "cosmetics/telegram/client.hpp"
+#include "cosmetics/dialog/message.hpp"
 #include "cosmetics/transport/fake_transport.hpp"
 
 #include <gtest/gtest.h>
@@ -56,8 +57,8 @@ TEST(Telegram, MessageAndCallbackRequests) {
     FakeTransport transport;
     TelegramClient client(transport);
     transport.set_response(R"({"ok":true,"result":{}})");
-    ASSERT_TRUE(client.send_message(13, "строка \"\n"));
-    ASSERT_TRUE(client.send_message(15, "выбери", {"а", "б", "в", "г", "д", "е"}));
+    ASSERT_TRUE(Message({"строка \"\n"}).send(client, 13));
+    ASSERT_TRUE(Message({"выбери", {"а", "б", "в", "г", "д", "е"}}).send(client, 15));
     ASSERT_TRUE(client.answer_callback("cb\"1"));
     EXPECT_FALSE(client.send_photo(15, "подпись", "file.jpg"));
     const auto& requests = transport.requests();

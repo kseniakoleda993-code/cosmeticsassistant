@@ -19,3 +19,18 @@ TEST(User, IndependentCopies) {
     EXPECT_EQ(updated.cart().total(), 100);
     EXPECT_EQ(updated.stage(), Stage::Continue);
 }
+
+#include "cosmetics/storage/users.hpp"
+
+TEST(Users, ChatIdsHaveSeparateState) {
+    Users users;
+    users.set(91, User().with_stage(Stage::Category));
+    users.set(-100123456789, User().with_category(Category::Hair).with_stage(Stage::Position));
+    EXPECT_EQ(users.get(91).stage(), Stage::Category);
+    EXPECT_FALSE(users.get(91).category());
+    EXPECT_EQ(users.get(-100123456789).stage(), Stage::Position);
+    EXPECT_EQ(users.get(-100123456789).category(), Category::Hair);
+    EXPECT_EQ(users.get(32).stage(), Stage::Start);
+    users.set(91, User().with_stage(Stage::End));
+    EXPECT_EQ(users.get(91).stage(), Stage::End);
+}

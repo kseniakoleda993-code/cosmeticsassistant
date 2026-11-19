@@ -27,12 +27,16 @@ add_library(cosmetics STATIC
     src/telegram/update.cpp
     src/telegram/request.cpp
     src/telegram/client.cpp
+    src/telegram/bot.cpp
 )
 target_link_libraries(cosmetics PUBLIC CURL::libcurl)
 target_include_directories(cosmetics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(cosmetics PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+add_executable(cosmetics_bot src/main.cpp)
+target_link_libraries(cosmetics_bot PRIVATE cosmetics)
 
 add_executable(telegram_smoke EXCLUDE_FROM_ALL tests/telegram_smoke.cpp)
 target_link_libraries(telegram_smoke PRIVATE cosmetics)

@@ -5,6 +5,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(COSMETICS_COVERAGE "Измерять покрытие кода Clang" OFF)
+if(COSMETICS_COVERAGE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "Для покрытия нужен Clang")
+endif()
+
+function(cosmetics_coverage target)
+    if(COSMETICS_COVERAGE)
+        target_compile_options(${target} PRIVATE -fprofile-instr-generate -fcoverage-mapping)
+        target_link_options(${target} PRIVATE -fprofile-instr-generate)
+    endif()
+endfunction()
+
 find_package(CURL 7.56 REQUIRED)
 
 add_library(cosmetics STATIC
@@ -30,6 +42,7 @@ add_library(cosmetics STATIC
     src/telegram/client.cpp
     src/telegram/bot.cpp
 )
+cosmetics_coverage(cosmetics)
 target_link_libraries(cosmetics PUBLIC CURL::libcurl)
 target_include_directories(cosmetics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -38,9 +51,11 @@ endif()
 
 add_executable(cosmetics_bot src/main.cpp)
 target_link_libraries(cosmetics_bot PRIVATE cosmetics)
+cosmetics_coverage(cosmetics_bot)
 
 add_executable(telegram_smoke EXCLUDE_FROM_ALL tests/telegram_smoke.cpp)
 target_link_libraries(telegram_smoke PRIVATE cosmetics)
+cosmetics_coverage(telegram_smoke)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -57,34 +72,36 @@ if(BUILD_TESTING)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
     include(GoogleTest)
-    function(add_cosmetics_test name)
-        add_executable(${name} tests/${name}.cpp)
-        target_link_libraries(${name} PRIVATE cosmetics GTest::gtest_main)
-        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-            target_compile_options(${name} PRIVATE -Wall -Wextra -Wpedantic)
-        endif()
-        gtest_discover_tests(${name})
-    endfunction()
-
-    add_cosmetics_test(framework_tests)
-    add_cosmetics_test(result_tests)
-    add_cosmetics_test(token_tests)
-    add_cosmetics_test(transport_tests)
-    add_cosmetics_test(http_tests)
-    add_cosmetics_test(category_tests)
-    add_cosmetics_test(position_tests)
-    add_cosmetics_test(category_positions_tests)
-    add_cosmetics_test(budget_tests)
-    add_cosmetics_test(product_tests)
-    add_cosmetics_test(catalog_tests)
-    target_compile_definitions(catalog_tests PRIVATE COSMETICS_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
-    add_cosmetics_test(cart_tests)
-    add_cosmetics_test(user_tests)
-    add_cosmetics_test(dialog_tests)
-    add_cosmetics_test(store_tests)
-    add_cosmetics_test(bot_tests)
-    add_cosmetics_test(json_tests)
-    add_cosmetics_test(telegram_tests)
+    add_executable(cosmetics_tests
+        tests/framework_tests.cpp
+        tests/result_tests.cpp
+        tests/token_tests.cpp
+        tests/transport_tests.cpp
+        tests/http_tests.cpp
+        tests/category_tests.cpp
+        tests/position_tests.cpp
+        tests/category_positions_tests.cpp
+        tests/budget_tests.cpp
+        tests/product_tests.cpp
+        tests/catalog_tests.cpp
+        tests/cart_tests.cpp
+        tests/user_tests.cpp
+        tests/dialog_tests.cpp
+        tests/store_tests.cpp
+        tests/bot_tests.cpp
+        tests/json_tests.cpp
+        tests/telegram_tests.cpp
+    )
+    target_compile_definitions(cosmetics_tests PRIVATE COSMETICS_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+    target_link_libraries(cosmetics_tests PRIVATE cosmetics GTest::gtest_main)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(cosmetics_tests PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    cosmetics_coverage(cosmetics_tests)
+    gtest_discover_tests(cosmetics_tests)
+    add_test(NAME bot_missing_token
+        COMMAND ${CMAKE_COMMAND} -DBOT=$<TARGET_FILE:cosmetics_bot> -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_startup.cmake
+    )
     add_executable(framework_failure_probe tests/framework_failure_probe.cpp)
     target_link_libraries(framework_failure_probe PRIVATE GTest::gtest_main)
     add_test(NAME framework_failure_exit

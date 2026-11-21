@@ -1,4 +1,5 @@
 #include "cosmetics/dialog/user.hpp"
+#include "cosmetics/storage/users.hpp"
 
 #include <gtest/gtest.h>
 
@@ -19,8 +20,6 @@ TEST(User, IndependentCopies) {
     EXPECT_EQ(updated.cart().total(), 100);
     EXPECT_EQ(updated.stage(), Stage::Continue);
 }
-
-#include "cosmetics/storage/users.hpp"
 
 TEST(Users, ChatIdsHaveSeparateState) {
     Users users;

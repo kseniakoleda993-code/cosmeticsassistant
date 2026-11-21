@@ -7,6 +7,6 @@
 
 namespace cosmetics::json {
 
-Result<Ptr> parse(std::string_view input);
+Result<Ptr> parse(std::string_view input, bool allow_decimal = false);
 
 }

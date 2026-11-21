@@ -10,7 +10,7 @@ Result<json::Ptr> check_reply(Result<std::string> reply) {
     if (!reply) {
         return Result<json::Ptr>::failure(reply.error());
     }
-    auto parsed = json::parse(reply.value());
+    auto parsed = json::parse(reply.value(), true);
     if (!parsed) {
         return Result<json::Ptr>::failure(parsed.error());
     }

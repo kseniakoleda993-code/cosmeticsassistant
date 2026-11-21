@@ -1,4 +1,5 @@
 #include "cosmetics/transport/https_transport.hpp"
+#include "cosmetics/http/response.hpp"
 
 #include <curl/curl.h>
 
@@ -16,6 +17,26 @@ std::size_t write_body(char* bytes, std::size_t size, std::size_t count, void* o
     }
     try {
         body.append(bytes, length);
+        return length;
+    } catch (const std::exception&) {
+        return 0;
+    }
+}
+
+std::size_t write_headers(char* bytes, std::size_t size, std::size_t count, void* output) noexcept {
+    auto& headers = *static_cast<std::string*>(output);
+    std::size_t length = size * count;
+    std::string_view line(bytes, length);
+    if (line.substr(0, 5) == "HTTP/") {
+        headers.clear();
+    } else if (headers.size() >= 4 && headers.compare(headers.size() - 4, 4, "\r\n\r\n") == 0) {
+        return length;
+    }
+    if (length > 65536 - headers.size()) {
+        return 0;
+    }
+    try {
+        headers.append(bytes, length);
         return length;
     } catch (const std::exception&) {
         return 0;
@@ -75,8 +96,10 @@ Result<std::string> HttpsTransport::perform(const std::string& method, const std
 
     std::string url = "https://api.telegram.org/bot" + token + "/" + method;
     std::string response;
+    std::string response_headers;
     auto* curl = handle.get();
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0L);
@@ -85,6 +108,8 @@ Result<std::string> HttpsTransport::perform(const std::string& method, const std
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_body);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_headers);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_headers);
 
     std::unique_ptr<curl_mime, decltype(&curl_mime_free)> mime(nullptr, curl_mime_free);
     std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> headers(nullptr, curl_slist_free_all);
@@ -121,6 +146,15 @@ Result<std::string> HttpsTransport::perform(const std::string& method, const std
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
     if (status < 200 || status >= 300) {
         return Response::failure("Telegram вернул HTTP " + std::to_string(status));
+    }
+    curl_off_t length = -1;
+    curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &length);
+    if (length >= 0) {
+        auto parsed = parse_http_response(response_headers + response);
+        if (!parsed) {
+            return Response::failure(parsed.error());
+        }
+        return Response::success(std::move(parsed.value().body));
     }
     return Response::success(std::move(response));
 }

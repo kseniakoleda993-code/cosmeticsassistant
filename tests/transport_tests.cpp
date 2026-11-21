@@ -1,4 +1,5 @@
 #include "cosmetics/transport/fake_transport.hpp"
+#include "cosmetics/transport/https_transport.hpp"
 #include <gtest/gtest.h>
 
 #include <memory>
@@ -37,4 +38,17 @@ TEST(Transport, RecordsRequestsInOrder) {
     EXPECT_EQ(std::string("{\"offset\":10}"), transport.requests()[0].body);
     EXPECT_EQ(std::string("sendMessage"), transport.requests()[1].method);
     EXPECT_EQ(std::string("{\"text\":\"привет\"}"), transport.requests()[1].body);
+}
+
+TEST(HttpsTransport, RejectsInvalidRequestsBeforeNetwork) {
+    cosmetics::HttpsTransport transport("123:example");
+    EXPECT_FALSE(transport.send("getMe/../", "{}"));
+    EXPECT_FALSE(transport.send("", "{}"));
+    EXPECT_FALSE(transport.upload("sendPhoto", {}, ""));
+    cosmetics::HttpsTransport invalid("123:example?token");
+    auto result = invalid.send("getMe", "{}");
+    ASSERT_FALSE(result);
+    EXPECT_EQ(result.error().find("123:example"), std::string::npos);
+    cosmetics::HttpsTransport no_timeout("123:example", 0);
+    EXPECT_FALSE(no_timeout.send("getMe", "{}"));
 }

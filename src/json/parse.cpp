@@ -28,9 +28,19 @@ void append_utf8(std::string& text, unsigned int code) {
     text += static_cast<char>(0x80 | (code & 63));
 }
 
+class Decimal final : public Value {
+public:
+    explicit Decimal(std::string value) : value(std::move(value)) {}
+    Type type() const noexcept override { return Type::Number; }
+    std::string text() const override { return value; }
+
+private:
+    std::string value;
+};
+
 class Parser {
 public:
-    explicit Parser(std::string_view input) : input(input) {}
+    Parser(std::string_view input, bool allow_decimal) : input(input), allow_decimal(allow_decimal) {}
 
     Ptr read() {
         skip_space();
@@ -44,6 +54,7 @@ public:
 
 private:
     std::string_view input;
+    bool allow_decimal;
     std::size_t pos = 0;
 
     [[noreturn]] void fail() const {
@@ -142,6 +153,15 @@ private:
         fail();
     }
 
+    void read_digits() {
+        if (!digit(peek())) {
+            fail();
+        }
+        do {
+            ++pos;
+        } while (digit(peek()));
+    }
+
     Ptr read_number() {
         std::size_t start = pos;
         take('-');
@@ -156,6 +176,23 @@ private:
             while (digit(peek())) {
                 ++pos;
             }
+        }
+        bool decimal = take('.');
+        if (decimal) {
+            read_digits();
+        }
+        if (take('e') || take('E')) {
+            decimal = true;
+            if (!take('+')) {
+                take('-');
+            }
+            read_digits();
+        }
+        if (decimal) {
+            if (!allow_decimal) {
+                fail();
+            }
+            return std::make_unique<Decimal>(std::string(input.substr(start, pos - start)));
         }
         std::int64_t value = 0;
         auto result = std::from_chars(input.data() + start, input.data() + pos, value);
@@ -246,9 +283,9 @@ private:
 
 }
 
-Result<Ptr> parse(std::string_view input) {
+Result<Ptr> parse(std::string_view input, bool allow_decimal) {
     try {
-        return Result<Ptr>::success(Parser(input).read());
+        return Result<Ptr>::success(Parser(input, allow_decimal).read());
     } catch (const std::invalid_argument& error) {
         return Result<Ptr>::failure(error.what());
     }

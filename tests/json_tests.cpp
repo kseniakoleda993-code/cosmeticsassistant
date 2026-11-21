@@ -5,6 +5,22 @@
 
 using namespace cosmetics::json;
 
+TEST(Json, IdentifiesAllSixTypes) {
+    const String string("текст");
+    const Number number(1);
+    const Boolean boolean(true);
+    const Null null;
+    const Array array;
+    const Object object;
+    auto type = [](const Value& value) { return value.type(); };
+    EXPECT_EQ(type(string), Type::String);
+    EXPECT_EQ(type(number), Type::Number);
+    EXPECT_EQ(type(boolean), Type::Boolean);
+    EXPECT_EQ(type(null), Type::Null);
+    EXPECT_EQ(type(array), Type::Array);
+    EXPECT_EQ(type(object), Type::Object);
+}
+
 TEST(Json, ScalarsAndEscapes) {
     auto string = parse(R"("Привет \" \\ \/ \b \f \r \n \t \u263a \ud83d\ude00 \u0001")");
     ASSERT_TRUE(string);

@@ -1,4 +1,5 @@
 #include "cosmetics/catalog/cart.hpp"
+#include "cosmetics/dialog/summary.hpp"
 
 #include <gtest/gtest.h>
 #include <limits>
@@ -21,8 +22,6 @@ TEST(Cart, CopiesKeepOrderAndSum) {
     auto overflow = Cart().add(Product("a", std::numeric_limits<std::int64_t>::max())).add(Product("b", 1));
     EXPECT_THROW(overflow.total(), std::overflow_error);
 }
-
-#include "cosmetics/dialog/summary.hpp"
 
 TEST(Cart, SummaryIncludesZeroAndTotal) {
     EXPECT_EQ(cart_summary(Cart()), "Отлично! Суммарная стоимость продуктов:\n0.00 BYN\nБыл рад помочь! Если есть какие-либо вопросы, задавай");

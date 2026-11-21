@@ -28,7 +28,7 @@ TEST(Telegram, EmptyAndMultipleUpdates) {
     EXPECT_EQ(one.value().actions.front().chat, 11);
     EXPECT_EQ(one.value().actions.front().action, "/start");
 
-    transport.set_response(R"({"ok":true,"result":[{"update_id":84},{"update_id":82,"callback_query":{"id":"cb1","data":"шампунь","message":{"chat":{"id":-100123456789}}}},{"update_id":81,"message":{"chat":{"id":5},"text":"привет"}},{"update_id":83,"message":{"chat":{"id":6}}}]})");
+    transport.set_response(R"({"ok":true,"result":[{"update_id":84},{"update_id":82,"callback_query":{"id":"cb1","data":"шампунь","message":{"chat":{"id":-100123456789}}}},{"update_id":81,"message":{"chat":{"id":5},"text":"привет"}},{"update_id":83,"message":{"chat":{"id":6},"location":{"latitude":53.9,"longitude":2.75e+1}}}]})");
     auto result = client.get_updates(81);
     ASSERT_TRUE(result);
     ASSERT_EQ(result.value().actions.size(), 2u);
@@ -42,7 +42,7 @@ TEST(Telegram, EmptyAndMultipleUpdates) {
 TEST(Telegram, ReportsApiAndTransportErrors) {
     FakeTransport transport;
     TelegramClient client(transport);
-    for (const auto* response : {"{bad", "[]", R"({"ok":false})", R"({"ok":1})", R"({"ok":true})", R"({"ok":true,"result":{}})", R"({"ok":true,"result":[null]})", R"({"ok":true,"result":[{"update_id":-1}]})", R"({"ok":true,"result":[{"update_id":9223372036854775807}]})"}) {
+    for (const auto* response : {"{bad", "[]", R"({"ok":false})", R"({"ok":1})", R"({"ok":true})", R"({"ok":true,"result":{}})", R"({"ok":true,"result":[null]})", R"({"ok":true,"result":[{"update_id":-1}]})", R"({"ok":true,"result":[{"update_id":1.2}]})", R"({"ok":true,"result":[{"update_id":1e}]})", R"({"ok":true,"result":[{"update_id":9223372036854775807}]})"}) {
         transport.set_response(response);
         EXPECT_FALSE(client.get_updates(0)) << response;
     }

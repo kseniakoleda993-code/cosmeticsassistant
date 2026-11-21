@@ -18,6 +18,7 @@ add_library(cosmetics STATIC
     src/catalog/budget.cpp
     src/catalog/product.cpp
     src/catalog/catalog.cpp
+    src/catalog/file_catalog.cpp
     src/catalog/cart.cpp
     src/dialog/summary.cpp
     src/dialog/step.cpp
@@ -76,6 +77,7 @@ if(BUILD_TESTING)
     add_cosmetics_test(budget_tests)
     add_cosmetics_test(product_tests)
     add_cosmetics_test(catalog_tests)
+    target_compile_definitions(catalog_tests PRIVATE COSMETICS_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
     add_cosmetics_test(cart_tests)
     add_cosmetics_test(user_tests)
     add_cosmetics_test(dialog_tests)

@@ -1,4 +1,4 @@
-#include "cosmetics/catalog/catalog.hpp"
+#include "cosmetics/catalog/file_catalog.hpp"
 #include "cosmetics/config/token.hpp"
 #include "cosmetics/telegram/bot.hpp"
 #include "cosmetics/transport/https_transport.hpp"
@@ -18,7 +18,7 @@ void stop(int) {
 
 }
 
-int main() {
+int main(int argc, char** argv) {
     std::signal(SIGINT, stop);
     std::signal(SIGTERM, stop);
     auto token = cosmetics::load_bot_token();
@@ -28,8 +28,16 @@ int main() {
     }
     cosmetics::HttpsTransport transport(std::move(token.value()));
     cosmetics::TelegramClient client(transport);
-    cosmetics::SampleCatalog catalog;
-    cosmetics::Bot bot(client, catalog, std::cerr);
+    if (argc > 2) {
+        std::cerr << "Использование: cosmetics_bot [путь-к-products.tsv]\n";
+        return 1;
+    }
+    auto catalog = cosmetics::FileCatalog::load(argc == 2 ? argv[1] : "data/products.tsv");
+    if (!catalog) {
+        std::cerr << catalog.error() << '\n';
+        return 1;
+    }
+    cosmetics::Bot bot(client, catalog.value(), std::cerr);
     std::cerr << "Бот запущен\n";
     int delay = 1;
     while (!stopped) {

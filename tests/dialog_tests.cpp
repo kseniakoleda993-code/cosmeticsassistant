@@ -27,7 +27,7 @@ TEST(Dialog, FullFlowAndButtonOrder) {
     auto offer = dialog.handle(position.user, "средний");
     EXPECT_EQ(offer.user.stage(), Stage::Continue);
     EXPECT_EQ(offer.user.cart().items().size(), 1u);
-    EXPECT_EQ(offer.messages[1].buttons, (std::vector<std::string>{"да", "нет"}));
+    EXPECT_EQ(offer.messages[1].buttons, (std::vector<std::string>{"да", "нет", "корзина"}));
     auto end = dialog.handle(offer.user, "нет");
     EXPECT_EQ(end.user.stage(), Stage::End);
     EXPECT_NE(end.messages[0].text.find("11.00 BYN"), std::string::npos);
@@ -49,7 +49,7 @@ TEST(Dialog, TwoPicksAndRepeatedPrompts) {
     }
     EXPECT_EQ(user.stage(), Stage::End);
     EXPECT_EQ(user.cart().total(), 3800);
-    EXPECT_TRUE(dialog.step(user.stage()).prompt(user).buttons.empty());
+    EXPECT_EQ(dialog.step(user.stage()).prompt(user).buttons, (std::vector<std::string>{"подобрать ещё", "корзина"}));
 }
 
 TEST(Dialog, InvalidStateAndCatalogFailure) {
@@ -68,4 +68,65 @@ TEST(Dialog, InvalidStateAndCatalogFailure) {
     EXPECT_EQ(result.user.stage(), Stage::Budget);
     EXPECT_TRUE(result.user.cart().items().empty());
     EXPECT_EQ(result.messages.size(), 2u);
+}
+
+TEST(Dialog, RemovesItemFromFinishedCartAndResumesPicking) {
+    SampleCatalog catalog;
+    Dialog dialog(catalog);
+    auto first = Cart().add(Product("Шампунь", 2800));
+    auto first_view = dialog.handle(User().with_cart(first), "/cart");
+    auto cart = first.add(Product("Маска", 6500)).add(Product("Шампунь", 2800));
+    auto end = dialog.handle(User().with_cart(cart).with_stage(Stage::Continue), "нет");
+    ASSERT_EQ(end.user.stage(), Stage::End);
+    ASSERT_EQ(end.messages.front().buttons, (std::vector<std::string>{"подобрать ещё", "корзина"}));
+    auto opened = dialog.handle(end.user, "корзина");
+    ASSERT_EQ(opened.user.stage(), Stage::Cart);
+    ASSERT_EQ(opened.messages.front().callbacks.size(), 4u);
+    EXPECT_NE(opened.messages.front().text.find("121.00 BYN"), std::string::npos);
+    const auto old_action = opened.messages.front().callbacks[1];
+    auto removed = dialog.handle(opened.user, old_action);
+    ASSERT_EQ(removed.user.cart().items().size(), 2u);
+    EXPECT_EQ(removed.user.cart().total(), 5600);
+    EXPECT_NE(removed.messages.front().text.find("56.00 BYN"), std::string::npos);
+    auto stale = dialog.handle(removed.user, old_action);
+    EXPECT_EQ(stale.user.cart().total(), 5600);
+    auto back = dialog.handle(stale.user, "cart:back");
+    EXPECT_EQ(back.user.stage(), Stage::End);
+    EXPECT_NE(back.messages.front().text.find("56.00 BYN"), std::string::npos);
+    auto resumed = dialog.handle(back.user, "подобрать ещё");
+    EXPECT_EQ(resumed.user.stage(), Stage::Category);
+    EXPECT_EQ(resumed.user.cart().total(), 5600);
+    auto restarted = dialog.handle(resumed.user, "/start");
+    EXPECT_TRUE(restarted.user.cart().items().empty());
+    auto selected = dialog.handle(restarted.user, "уход для волос");
+    auto shampoo = dialog.handle(selected.user, "шампунь");
+    auto offer = dialog.handle(shampoo.user, "средний");
+    auto reopened = dialog.handle(offer.user, "/cart");
+    ASSERT_EQ(reopened.user.cart().items().size(), 1u);
+    const auto first_action = first_view.messages.front().callbacks.front();
+    EXPECT_NE(reopened.messages.front().callbacks.front(), first_action);
+    auto repeated = dialog.handle(reopened.user, first_action);
+    EXPECT_EQ(repeated.user.cart().items().size(), 1u);
+}
+
+TEST(Dialog, EmptyCartAndPaginationAfterRemoval) {
+    SampleCatalog catalog;
+    Dialog dialog(catalog);
+    auto empty = dialog.handle(User(), "/cart");
+    EXPECT_EQ(empty.user.stage(), Stage::Cart);
+    EXPECT_NE(empty.messages.front().text.find("0.00 BYN"), std::string::npos);
+    EXPECT_EQ(empty.messages.front().callbacks, (std::vector<std::string>{"cart:back"}));
+
+    Cart cart;
+    for (int i = 0; i < 9; ++i) {
+        cart = cart.add(Product("Товар", 1000));
+    }
+    auto opened = dialog.handle(User().with_cart(cart), "/cart");
+    auto next = dialog.handle(opened.user, "cart:next");
+    EXPECT_EQ(next.user.cart_page(), 1u);
+    EXPECT_EQ(dialog.handle(next.user, "cart:prev").user.cart_page(), 0u);
+    ASSERT_EQ(next.messages.front().buttons.front(), "удалить №9");
+    auto removed = dialog.handle(next.user, next.messages.front().callbacks.front());
+    EXPECT_EQ(removed.user.cart_page(), 0u);
+    EXPECT_EQ(removed.user.cart().total(), 8000);
 }

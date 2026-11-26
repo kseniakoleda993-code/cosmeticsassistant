@@ -88,3 +88,16 @@ TEST(Telegram, MessageAndCallbackRequests) {
     EXPECT_EQ(requests[2].method, "answerCallbackQuery");
     EXPECT_EQ(requests[2].body, R"({"callback_query_id":"cb\"1"})");
 }
+
+TEST(Telegram, CartButtonsCarryTheirOwnActions) {
+    FakeTransport transport;
+    TelegramClient client(transport);
+    transport.set_response(R"({"ok":true,"result":{}})");
+    Message choice{"Корзина", {"удалить №1", "назад"}, {}, {"cart:3:0", "cart:back"}};
+    ASSERT_TRUE(choice.send(client, 123));
+    const auto& body = transport.requests().back().body;
+    EXPECT_NE(body.find(R"("callback_data":"cart:3:0")"), std::string::npos);
+    EXPECT_NE(body.find(R"("text":"удалить №1")"), std::string::npos);
+    choice.callbacks.pop_back();
+    EXPECT_THROW(choice.send(client, 123), std::invalid_argument);
+}

@@ -11,7 +11,7 @@ public:
     Transition handle(const User& user, std::string_view action) const;
 
 private:
-    std::array<std::unique_ptr<Step>, 6> steps;
+    std::array<std::unique_ptr<Step>, 7> steps;
 };
 
 }

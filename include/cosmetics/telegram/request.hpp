@@ -6,6 +6,6 @@
 
 namespace cosmetics {
 
-std::string message_request(std::int64_t chat, const std::string& text, const std::vector<std::string>& buttons);
+std::string message_request(std::int64_t chat, const std::string& text, const std::vector<std::string>& buttons, const std::vector<std::string>& callbacks = {});
 
 }

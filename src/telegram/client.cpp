@@ -49,8 +49,8 @@ Result<Updates> TelegramClient::get_updates(std::int64_t offset) {
     return read_updates(*array.value());
 }
 
-Result<bool> TelegramClient::send_message(std::int64_t chat, const std::string& text, const std::vector<std::string>& buttons) {
-    return check_sent(transport.send("sendMessage", message_request(chat, text, buttons)));
+Result<bool> TelegramClient::send_message(std::int64_t chat, const std::string& text, const std::vector<std::string>& buttons, const std::vector<std::string>& callbacks) {
+    return check_sent(transport.send("sendMessage", message_request(chat, text, buttons, callbacks)));
 }
 
 Result<bool> TelegramClient::send_photo(std::int64_t chat, const std::string& caption, const std::string& file) {

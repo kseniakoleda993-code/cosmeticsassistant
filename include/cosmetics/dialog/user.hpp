@@ -8,7 +8,7 @@
 
 namespace cosmetics {
 
-enum class Stage { Start, Category, Position, Budget, Continue, End };
+enum class Stage { Start, Category, Position, Budget, Continue, End, Cart };
 
 class User {
 public:
@@ -17,6 +17,25 @@ public:
     std::optional<Position> position() const { return selected_position; }
     std::optional<Budget> budget() const { return selected_budget; }
     const Cart& cart() const { return basket; }
+    std::size_t cart_page() const { return page; }
+
+    User open_cart() const {
+        User copy = *this;
+        copy.return_stage = current;
+        copy.current = Stage::Cart;
+        copy.page = 0;
+        return copy;
+    }
+
+    User close_cart() const {
+        return with_stage(return_stage);
+    }
+
+    User with_cart_page(std::size_t index) const {
+        User copy = *this;
+        copy.page = index;
+        return copy;
+    }
 
     User with_stage(Stage stage) const {
         User copy = *this;
@@ -54,6 +73,8 @@ private:
     std::optional<Position> selected_position;
     std::optional<Budget> selected_budget;
     Cart basket;
+    Stage return_stage = Stage::Start;
+    std::size_t page = 0;
 };
 
 }

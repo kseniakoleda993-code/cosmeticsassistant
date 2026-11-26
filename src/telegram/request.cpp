@@ -1,18 +1,24 @@
 #include "cosmetics/telegram/request.hpp"
 #include "cosmetics/json/value.hpp"
 
+#include <stdexcept>
+
 namespace cosmetics {
 
-std::string message_request(std::int64_t chat, const std::string& text, const std::vector<std::string>& buttons) {
+std::string message_request(std::int64_t chat, const std::string& text, const std::vector<std::string>& buttons, const std::vector<std::string>& callbacks) {
+    if (!callbacks.empty() && callbacks.size() != buttons.size()) {
+        throw std::invalid_argument("Число кнопок не совпадает с числом действий");
+    }
     json::Object request;
     request.fields["chat_id"] = std::make_unique<json::Number>(chat);
     request.fields["text"] = std::make_unique<json::String>(text);
     if (!buttons.empty()) {
         auto keyboard = std::make_unique<json::Array>();
-        for (const auto& label : buttons) {
+        for (std::size_t i = 0; i < buttons.size(); ++i) {
+            const auto& label = buttons[i];
             auto button = std::make_unique<json::Object>();
             button->fields["text"] = std::make_unique<json::String>(label);
-            button->fields["callback_data"] = std::make_unique<json::String>(label);
+            button->fields["callback_data"] = std::make_unique<json::String>(callbacks.empty() ? label : callbacks[i]);
             auto row = std::make_unique<json::Array>();
             row->values.push_back(std::move(button));
             keyboard->values.push_back(std::move(row));
